@@ -1,0 +1,50 @@
+name: Deploy API to AWS
+on:
+    push:
+        branches: [main]
+jobs:
+    deploy-api:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Confirmando início da execução
+              run: echo "Testando novo deploy"
+
+            - name: Testando ssh remote commands
+              uses: appleboy/ssh-action@v1.1.0
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_KEY }}                
+                script: cd /var/www/api/ && ls
+
+            - name: Baixar alterações do GitHub
+              uses: appleboy/ssh-action@v1.1.0
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_KEY }}
+                script: cd /var/www/api/ && sudo git pull origin main
+
+            - name: Instalar as dependências
+              uses: appleboy/ssh-action@v1.1.0
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_KEY }}
+                script: cd /var/www/api/ && sudo npm install
+            
+            - name: Realizar build da aplicação
+              uses: appleboy/ssh-action@v1.1.0
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_KEY }}
+                script: cd /var/www/api/ && sudo npm run build
+
+            - name: Reiniciar o PM2
+              uses: appleboy/ssh-action@v1.1.0
+              with:
+                host: ${{ secrets.SSH_HOST }}
+                username: ${{ secrets.SSH_USERNAME }}
+                key: ${{ secrets.SSH_KEY }}
+                script: cd /var/www/api/ && sudo pm2 restart api
